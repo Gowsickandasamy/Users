@@ -59,7 +59,7 @@ public class AuthenticationService {
             .lastName(request.getLastname())
             .email(request.getEmail())
             .password(passwordEncoder.encode(request.getPassword()))
-            .isemailverified(false)
+            .isemailverified(true)
             .role(role)
             .businessUnit(request.getBusinessUnit())
             .employeeId(request.getEmployeeId())
