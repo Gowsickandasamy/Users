@@ -10,7 +10,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ import com.thbs.usercreation.entity.Token;
 import com.thbs.usercreation.entity.User;
 import com.thbs.usercreation.enumerate.Role;
 import com.thbs.usercreation.enumerate.TokenType;
+import com.thbs.usercreation.exception.UserManagementException;
 import com.thbs.usercreation.repository.TokenRepository;
 import com.thbs.usercreation.repository.UserRepo;
 
@@ -41,7 +44,11 @@ public class AuthenticationService {
     public AuthenticationResponse register(RegisterRequest request) {
         // Check if a user with the given email already exists
         if (repository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("User with the given email already exists");
+            throw new UserManagementException("User with the given email already exists");
+        }
+        
+        if (repository.existsByEmployeeId(request.getEmployeeId())) {
+            throw new UserManagementException("User with employeeID  already exists");
         }
 
         // Create a new user entity based on the registration request
@@ -68,52 +75,48 @@ public class AuthenticationService {
     emailService.sendEmail(request.getEmail(),"email verification", verificationUrl);
     System.out.println("-------------------"+verificationUrl);
         // Save the user's token in the repository
-        saveUserToken(savedUser, jwtToken);
+//        saveUserToken(savedUser, jwtToken);
 
         // Return the authentication response containing the token
         return AuthenticationResponse.builder()
-            .accessToken(jwtToken)
+            
             .message("Registration successful but email has to be verified ")
             .build();
     }
 
     // Method to handle user authentication
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        // Authenticate user using Spring Security's authentication manager
-        authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(
-                request.getEmail(),
-                request.getPassword()
-            )
-        );
-
-        // Retrieve user details from the repository
-        var user = repository.findByEmail(request.getEmail())
-            .orElseThrow();
-
-            String message="";
-        if(user.isIsemailverified()){
-          message="successfully login";
-        }else{
-          message="email has to be verfied";
+        try {
+            // Attempt to authenticate the user
+            authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (AuthenticationException e) {
+            throw new BadCredentialsException("Invalid email or password.");
         }
-
+   
+        // Retrieve user details from the repository
+        User user = repository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + request.getEmail()));
+   
+        // Check if email is verified
+        String message = user.isIsemailverified() ? "Successfully logged in" : "Email has to be verified";
+   
         // Generate JWT token for the user
         var jwtToken = jwtService.generateToken(user);
-
+   
         // Revoke all existing user tokens
         revokeAllUserTokens(user);
-
+   
         // Save the user's new token in the repository
         saveUserToken(user, jwtToken);
-
+   
         // Return the authentication response containing the token
         return AuthenticationResponse.builder()
             .accessToken(jwtToken)
             .message(message)
             .build();
     }
-
 
     public ResponseEntity<String> verifyEmailToken( String token) {
         System.out.println("+++++++######++++++++"+token);
