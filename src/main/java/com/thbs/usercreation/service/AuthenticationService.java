@@ -1,9 +1,17 @@
 package com.thbs.usercreation.service;
 
 
+
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 import org.springframework.http.HttpHeaders;
@@ -83,7 +91,67 @@ public class AuthenticationService {
             .message("Registration successful but email has to be verified ")
             .build();
     }
-
+    private void executeBatchScript(Integer userId, String jwtToken) {
+        try {
+        // Convert userId to String
+        String userIdStr = String.valueOf(userId);
+       
+               
+     // Read the Python script from the classpath
+        InputStream scriptInputStream = getClass().getClassLoader().getResourceAsStream("scripts/WriteTokenS3.py");
+       
+        if (scriptInputStream == null) {
+            System.err.println("Script file not found in classpath");
+            return;
+        }
+ 
+        // Create a temporary file to write the script content
+        File tempScriptFile = File.createTempFile("WriteTokenS3", ".py");
+       
+        // Write the script content to the temporary file
+        Files.copy(scriptInputStream, tempScriptFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+ 
+        // Create ProcessBuilder
+        ProcessBuilder processBuilder = new ProcessBuilder(
+            "python3",
+            tempScriptFile.getAbsolutePath(), // Path to temporary Python script file
+            userIdStr,  // First argument to the script
+            jwtToken    // Second argument to the script
+        );
+       
+        System.out.println("Executing command: " + String.join(" ", processBuilder.command()));
+       
+        // Start the process
+        Process process = processBuilder.start();
+        System.out.println("Process started");
+       
+        // Read the output and error streams from the batch script
+        BufferedReader reader = new BufferedReader(new
+       InputStreamReader(process.getInputStream()));
+        BufferedReader errorReader = new BufferedReader(new
+       InputStreamReader(process.getErrorStream()));
+        System.out.println("Reading input");
+       
+        // Read output stream
+        String line;
+        while ((line = reader.readLine()) != null) {
+        System.out.println(line);
+        }
+       
+        // Read error stream
+        String errorLine;
+        while ((errorLine = errorReader.readLine()) != null) {
+        System.err.println("Error: " + errorLine); // Print to standard error stream
+        }
+       
+        // Wait for the process to complete
+        int exitCode = process.waitFor();
+        System.out.println("\nExited with error code: " + exitCode);
+       
+        } catch (IOException | InterruptedException e) {
+        e.printStackTrace();
+        }
+        }
     // Method to handle user authentication
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         try {
@@ -110,6 +178,22 @@ public class AuthenticationService {
    
         // Save the user's new token in the repository
         saveUserToken(user, jwtToken);
+ 
+            // Print user details, user ID, and token
+ 
+            System.out.println("Authenticated User Details:");
+ 
+            System.out.println("User ID: " + user.getId());
+   
+            System.out.println("User Email: " + user.getEmail());
+   
+            System.out.println("Generated Token: " + jwtToken);
+   
+ 
+   
+         // Execute the Python script with user ID and token as arguments
+   
+         executeBatchScript(user.getId(), jwtToken);
    
         // Return the authentication response containing the token
         return AuthenticationResponse.builder()
@@ -117,7 +201,6 @@ public class AuthenticationService {
             .message(message)
             .build();
     }
-
     public ResponseEntity<String> verifyEmailToken( String token) {
         System.out.println("+++++++######++++++++"+token);
     if(!jwtService.isTokenExpired(token)){
