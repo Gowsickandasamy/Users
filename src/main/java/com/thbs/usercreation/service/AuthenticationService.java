@@ -241,18 +241,20 @@ public class AuthenticationService {
     // }
 
     public AuthenticationResponse forgotPassword( EmailRequest emails) {
-        System.out.println("$$$$$$$$$$"+emails.getEmail());
-        User user = repository.findByEmail(emails.getEmail()).orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + emails.getEmail()));
-    
-        
-        if (user != null) {
-            String jwt = jwtService.generateToken(user);
-            String verificationUrl = "http://172.18.5.13:5173/enter-new-password?token=" + jwt;
-            emailService.sendEmail(emails.getEmail(), "forgot password", verificationUrl);
-            return AuthenticationResponse.builder()
-            .accessToken(jwt)
-            .message("link sent to your email for forgot password")
-            .build();
+        // System.out.println("$$$$$$$$$$"+emails.getEmail());
+        User user = repository.findByEmail(emails.getEmail())
+                          .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + emails.getEmail()));
+        if(user!=null) {
+ 
+    String jwt = jwtService.generateToken(user);
+    // String verificationUrl = "http://localhost:4321/api/v1/auth/generatepassword?token=" + jwt;
+    String verificationUrl="http://172.18.4.81:5173/enter-new-password?token="+jwt;
+    emailService.sendpasswordurl(emails.getEmail(), verificationUrl);
+ 
+    return AuthenticationResponse.builder()
+        .accessToken(jwt)
+        .message("Link sent to your email to reset password")
+        .build();
         }
     
     return AuthenticationResponse.builder()
@@ -260,6 +262,8 @@ public class AuthenticationService {
         .message("User not exixts")
         .build();
     }
+    
+    
 
     public ResponseEntity<String> verifypassword(VerifyPasswordToken token) {
         if(!jwtService.isTokenExpired(token.getToken())){

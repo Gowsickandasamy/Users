@@ -28,4 +28,4 @@ application:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://13.41.179.170:8761/eureka
+      defaultZone: http://172.18.5.20:8761/eureka
