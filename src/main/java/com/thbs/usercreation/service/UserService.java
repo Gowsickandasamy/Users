@@ -122,12 +122,10 @@ public class UserService {
 		return null;
 	}
 	
-	public List<User> findAll(){
-		return userRepo.findAll();
-	}
 	
-	public User getUserByEmployeeId(Long employeeId) {
-	    return userRepo.findByEmployeeId(employeeId);
+	public UserDTO getUserByEmployeeId(Long employeeId) {
+	    User user = userRepo.findByEmployeeId(employeeId);
+	    return mapToUserDTO(user);
 	}
 
 	public List<UserDTO> getUsersByRole(Role role) {
@@ -171,6 +169,15 @@ public class UserService {
 
 		    for (User user : usersToUpdate) {
 		        user.setRole(Role.TRAINER);
+		    }
+
+		    userRepo.saveAll(usersToUpdate);
+		}
+	 public void updateUsersRoleToUser(List<Long> employeeIds) {
+		    List<User> usersToUpdate = userRepo.findByEmployeeIdIn(employeeIds);
+		    
+		    for (User user : usersToUpdate) {
+		        user.setRole(Role.USER);
 		    }
 
 		    userRepo.saveAll(usersToUpdate);

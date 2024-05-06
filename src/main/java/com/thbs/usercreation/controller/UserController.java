@@ -47,15 +47,12 @@ public class UserController {
 		        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error: " + e.getMessage());
 		    }
 	}
-	@GetMapping
-	public List<User> getAll(){
-		return userService.findAll();
-	}
+	
 	
 	
 	 @GetMapping("/{employeeId}")
-	    public ResponseEntity<User> getUserByEmployeeId(@PathVariable Long employeeId) {
-	        User user = userService.getUserByEmployeeId(employeeId);
+	    public ResponseEntity<UserDTO> getUserByEmployeeId(@PathVariable Long employeeId) {
+	        UserDTO user = userService.getUserByEmployeeId(employeeId);
 	        if (user != null) {
 	            return ResponseEntity.ok(user);
 	        } else {
@@ -97,7 +94,15 @@ public class UserController {
 		            return "Failed to update roles: " + e.getMessage();
 		        }
 		    }
-
+		  @PutMapping("/updateRoleToUser")
+		    public String updateUsersRoleToUser(@RequestBody List<Long> employeeIds) {
+		        try {
+		            userService.updateUsersRoleToTrainer(employeeIds);
+		            return "Successfully updated roles to User for the specified users.";
+		        } catch (Exception e) {
+		            return "Failed to update roles: " + e.getMessage();
+		        }
+		    }
 
 }
 
