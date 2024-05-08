@@ -27,7 +27,7 @@ public class Token {
 
   @Id
   @GeneratedValue
-  public Integer id; // Unique identifier for the token
+  public Long id; // Unique identifier for the token
 
   @Column(unique = true)
   public String token; // The actual token value, marked as unique in the database

@@ -23,6 +23,8 @@ import com.thbs.usercreation.enumerate.Role;
 import com.thbs.usercreation.exception.UserManagementException;
 import com.thbs.usercreation.service.UserService;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 
 @RestController
 @RequestMapping("/user")
@@ -97,12 +99,17 @@ public class UserController {
 		  @PutMapping("/updateRoleToUser")
 		    public String updateUsersRoleToUser(@RequestBody List<Long> employeeIds) {
 		        try {
-		            userService.updateUsersRoleToTrainer(employeeIds);
+		            userService.updateUsersRoleToUser(employeeIds);
 		            return "Successfully updated roles to User for the specified users.";
 		        } catch (Exception e) {
 		            return "Failed to update roles: " + e.getMessage();
 		        }
 		    }
+		  
+		  @GetMapping("/format")
+		  public void generateSampleFormat(HttpServletResponse response) {
+			  userService.generateExcelFile(response);
+		  }
 
 }
 

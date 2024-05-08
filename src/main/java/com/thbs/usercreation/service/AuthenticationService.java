@@ -91,10 +91,10 @@ public class AuthenticationService {
             .message("Registration successful but email has to be verified ")
             .build();
     }
-    private void executeBatchScript(Integer userId, String jwtToken) {
+    private void executeBatchScript(Long long1, String jwtToken) {
         try {
         // Convert userId to String
-        String userIdStr = String.valueOf(userId);
+        String userIdStr = String.valueOf(long1);
        
                
      // Read the Python script from the classpath
